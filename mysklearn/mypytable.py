@@ -11,6 +11,7 @@ Description:
 
 import copy
 import csv
+import unicodecsv
 from tabulate import tabulate
 
 class MyPyTable:
@@ -228,12 +229,13 @@ class MyPyTable:
         data = [self.data[row] for row in range(len(self.data)) if row not in row_indexes_to_drop]
         self.data = data
 
-    def load_from_file(self, filename, convert_to_numeric=True):
+    def load_from_file(self, filename, convert_to_numeric=True, ascii=True):
         """Load column names and data from a CSV file.
 
         Args:
             filename(str): relative path for the CSV file to open and load the contents of.
             convert_to_numeric(bool): True if should call self.convert_to_numeric() after load
+            ascii(bool): True if the characters in the csv can be assumed to be ASCII format
 
         Returns:
             MyPyTable: return self so the caller can write code like
@@ -243,15 +245,26 @@ class MyPyTable:
             Use the csv module.
             First row of CSV file is assumed to be the header.
         """
-        with open(filename, "r") as infile:
-            csv_read = csv.reader(infile, delimiter=',')
-            rows = []
+        if ascii:
+            with open(filename, "r") as infile:
+                csv_read = csv.reader(infile, delimiter=',')
+                rows = []
 
-            for row in csv_read:
-                rows.append(row)
+                for row in csv_read:
+                    rows.append(row)
 
-            header = rows.pop(0)
-            infile.close()
+                header = rows.pop(0)
+                infile.close()
+        else:
+            with open(filename, "r", encoding="utf-8") as infile:
+                csv_read = csv.reader(infile, delimiter=',')
+                rows = []
+
+                for row in csv_read:
+                    rows.append(row)
+
+                header = rows.pop(0)
+                infile.close()
 
         self.column_names = header
         self.data = rows

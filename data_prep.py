@@ -12,6 +12,8 @@ Description:
 """
 
 import os
+from unidecode import unidecode
+
 from mysklearn.mypytable import MyPyTable
 
 """Globals (Change as data is added or removed)
@@ -27,7 +29,6 @@ from mysklearn.mypytable import MyPyTable
 first_season = 91
 last_season = 21
 season_anomolies = {21: 72, 20: 75, 12: 66, 99: 50}
-
 
 def get_season_strings():
     """TODO
@@ -49,7 +50,6 @@ def get_season_strings():
 
     return season_strings
 
-
 def get_team_data():
     """TODO
     """
@@ -63,23 +63,28 @@ def get_team_data():
     team_data = MyPyTable(season_data.column_names, data)
     return team_data
 
-
 def get_player_data():
     """TODO
     """
-
-
-
-
-
+    seasons = get_season_strings()
+    data = []
+    for season in seasons:
+        file_loc = "players_" + season + ".csv"
+        file_loc = os.path.join("input_data", "player_stats", file_loc)
+        # can't use ascii because of european player names, must use utf-8
+        season_data = MyPyTable().load_from_file(file_loc, ascii=False)
+        data += season_data.data
+    player_data = MyPyTable(season_data.column_names, data)
+    return player_data
 
 def main():
     """Used to test validity of functions and to 
     call functions that store data in .csv files
     """
-    team = get_team_data()
-    print(team)
-
+    teams = get_team_data()
+    players = get_player_data()
+    print(teams)
+    # print(players)
 
 if __name__ == "__main__":
     main()
