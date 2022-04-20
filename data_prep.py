@@ -63,7 +63,7 @@ def get_raw_team_data():
     seasons = get_season_strings()
     team_data = []
     for season in seasons:
-        season_number = season[-2:]
+        season_number = int(season[-2:])
         file_loc = "teams_" + season + ".csv"
         file_loc = os.path.join("input_data", "team_stats", file_loc)
         season_data = MyPyTable().load_from_file(file_loc, ascii=False)
@@ -84,7 +84,7 @@ def get_raw_player_data():
     seasons = get_season_strings()
     player_data = []
     for season in seasons:
-        season_number = season[-2:]
+        season_number = int(season[-2:])
         file_loc = "players_" + season + ".csv"
         file_loc = os.path.join("input_data", "player_stats", file_loc)
         # can't use ascii because of european player names, must use utf-8
@@ -172,6 +172,7 @@ def clean_player_data(data):
             player_name = player_name[:-1]
         row[name_index] = player_name
     data.drop_column("Rk")
+    data.column_names[data.column_names.index("Tm")] = "Team"
 
 def main():
     """Used to test validity of functions and to 
@@ -182,10 +183,17 @@ def main():
     clean_player_data(players)
     clean_team_data(teams)
 
-    cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
-    cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
-    teams.save_to_file(cleaned_team_loc)
-    players.save_to_file(cleaned_player_loc)
+    # cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
+    # cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
+    cleaned_joined_loc = os.path.join("input_data", "processed_data", "team_player_stats.csv")
+
+    # teams.save_to_file(cleaned_team_loc)
+    # players.save_to_file(cleaned_player_loc)
+    player_season_stats = teams.perform_inner_join(players, ["Season", "Team"])
+    player_season_stats.save_to_file(cleaned_joined_loc)
+
+    teams_stats = player_season_stats.groupby("Team", "Season")
+    # print(teams_stats["Chicago Bulls"][96])
     
 
 if __name__ == "__main__":

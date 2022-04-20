@@ -556,7 +556,7 @@ class MyPyTable:
         return frequencies
 
 
-    def groupby(self, col_identifier):
+    def groupby(self, col_identifier, second_col=None):
         """Return a dictionary of MyPyTables where the keys are the unique values
         from col_name and the values are MyPyTables with the instances
         containing those values in col_name position.
@@ -564,6 +564,7 @@ class MyPyTable:
         Args:
             col_identifier(str or int): string for a column name or int
                 for a column index
+            second_col(str or int): a string for the second column to join by
 
         Returns:
             dict of MyPyTables: the instances that contain each unique value for col_name.
@@ -587,4 +588,11 @@ class MyPyTable:
             groupby_data[row[col_index]].append(row)
 
         groupby_tables = {key: MyPyTable(copy.deepcopy(self.column_names), copy.deepcopy(data)) for key, data in groupby_data.items()}
+
+        if second_col is not None:
+            outer_groupby = {}
+            for key, table in groupby_tables.items():
+                outer_groupby[key] = table.groupby(second_col)
+            return outer_groupby
+
         return groupby_tables
