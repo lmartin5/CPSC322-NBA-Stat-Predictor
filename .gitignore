@@ -1,0 +1,3 @@
+# ignoring pycache folders
+__pycache__
+mysklean/__pycache__

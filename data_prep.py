@@ -13,7 +13,6 @@ Description:
 
 import os
 from unidecode import unidecode
-
 from mysklearn.mypytable import MyPyTable
 
 """Globals (Change as data is added or removed)
@@ -50,7 +49,7 @@ def get_season_strings():
 
     return season_strings
 
-def get_team_data():
+def get_raw_team_data():
     """TODO
     """
     seasons = get_season_strings()
@@ -63,7 +62,7 @@ def get_team_data():
     team_data = MyPyTable(season_data.column_names, data)
     return team_data
 
-def get_player_data():
+def get_raw_player_data():
     """TODO
     """
     seasons = get_season_strings()
@@ -77,14 +76,52 @@ def get_player_data():
     player_data = MyPyTable(season_data.column_names, data)
     return player_data
 
+def clean_player_data(data):
+    """TODO
+    """
+    teams = {"ATL":	"Atlanta Hawks", "BRK":	"Brooklyn Nets", "BOS": "Boston Celtics",
+             "CHO":	"Charlotte Hornets", "CHI":	"Chicago Bulls", "CLE": "Cleveland Cavaliers",
+             "DAL":	"Dallas Mavericks", "DEN": "Denver Nuggets", "DET": "Detroit Pistons",
+             "GSW": "Golden State Warriors", "HOU": "Houston Rockets", "IND": "Indiana Pacers",
+             "LAC": "Los Angeles Clippers", "LAL": "Los Angeles Lakers", "MEM": "Memphis Grizzlies",
+             "MIA": "Miami Heat", "MIL": "Milwaukee Bucks", "MIN": "Minnesota Timberwolves",
+             "NOP":	"New Orleans Pelicans", "NYK": "New York Knicks", "OKC": "Oklahoma City Thunder",
+             "ORL": "Orlando Magic", "PHI": "Philadelphia 76ers", "PHO": "Phoenix Suns",
+             "POR": "Portland Trail Blazers", "SAC": "Sacramento Kings", "SAS": "San Antonio Spurs",
+             "TOR": "Toronto Raptors", "UTA": "Utah Jazz", "WAS": "Washington Wizards",
+             # old, non-current teams
+             "WSB": "Washington Bullets", "NJN": "New Jersey Nets", "SEA": "Seattle SuperSonics", 
+             "CHH": "Charlotte Hornets", "VAN": "Vancouver Grizzlies", "NOH": "New Orleans Hornets",
+             "CHA": "Charlotte Bobcats", "NOK": "New Orleans/Oklahoma City Hornets",  
+             # used to keep track of players stats for whole year if traded, signed, etc.
+             "TOT": "Total"}
+
+    team_index = data.column_names.index("Tm")
+    name_index = data.column_names.index("Player")
+    for row in data.data:
+        # cleaning team column
+        row[team_index] = teams[row[team_index]]
+        # cleaning player column
+        player_name = row[name_index]
+        player_name = unidecode(player_name)
+        player_name = player_name.split("\\")[0]
+        if player_name[-1] == "*":
+            player_name = player_name[:-1]
+        row[name_index] = player_name
+
 def main():
     """Used to test validity of functions and to 
     call functions that store data in .csv files
     """
-    teams = get_team_data()
-    players = get_player_data()
-    print(teams)
-    # print(players)
+    teams = get_raw_team_data()
+    players = get_raw_player_data()
+    clean_player_data(players)
+
+    cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
+    cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
+    teams.save_to_file(cleaned_team_loc)
+    players.save_to_file(cleaned_player_loc)
+    
 
 if __name__ == "__main__":
     main()

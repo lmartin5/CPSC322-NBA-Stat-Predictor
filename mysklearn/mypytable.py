@@ -11,7 +11,7 @@ Description:
 
 import copy
 import csv
-import unicodecsv
+import platform
 from tabulate import tabulate
 
 class MyPyTable:
@@ -281,16 +281,26 @@ class MyPyTable:
             filename(str): relative path for the CSV file to save the contents to.
 
         Notes:
-            Use the csv module.
+            Use the csv module. Deals with newline differently when on windows
         """
-        with open(filename, "w") as outfile:
-            csv_write = csv.writer(outfile, delimiter=',')
+        if platform.system() == "Windows":
+            with open(filename, "w", newline="") as outfile:
+                csv_write = csv.writer(outfile, delimiter=',')
 
-            csv_write.writerow(self.column_names)
-            for row in self.data:
-                csv_write.writerow(row)
+                csv_write.writerow(self.column_names)
+                for row in self.data:
+                    csv_write.writerow(row)
 
-            outfile.close()
+                outfile.close()
+        else:
+            with open(filename, "w") as outfile:
+                csv_write = csv.writer(outfile, delimiter=',')
+
+                csv_write.writerow(self.column_names)
+                for row in self.data:
+                    csv_write.writerow(row)
+
+                outfile.close()
 
     def find_duplicates(self, key_column_names):
         """Returns a list of indexes representing duplicate rows.
