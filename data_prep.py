@@ -30,7 +30,11 @@ last_season = 21
 season_anomolies = {21: 72, 20: 75, 12: 66, 99: 50}
 
 def get_season_strings():
-    """TODO
+    """Creates a list of valid strings for the seasons we have in the format
+    required for loading in the raw data from our input_data folder
+
+    Returns:
+        season_strings(list of strs): season strings in format 'XX_XX'
     """
     seasons = list(range(first_season, 100)) + list(range(0, last_season + 1))
     season_strings = []
@@ -50,34 +54,61 @@ def get_season_strings():
     return season_strings
 
 def get_raw_team_data():
-    """TODO
+    """Load all of the raw team data into a MyPyTable object
+    Adds a column for season (i.e. 99 for 1998 - 1999 season)
+
+    Returns:
+        team_data(MyPyTable): table object containing the team information
     """
     seasons = get_season_strings()
-    data = []
+    team_data = []
     for season in seasons:
+        season_number = season[-2:]
         file_loc = "teams_" + season + ".csv"
         file_loc = os.path.join("input_data", "team_stats", file_loc)
         season_data = MyPyTable().load_from_file(file_loc)
-        data += season_data.data
-    team_data = MyPyTable(season_data.column_names, data)
+        data = season_data.data
+        # different month data columns for each season
+        data = [[season_number] + row[:17] for row in data]
+        team_data += data
+    team_data = MyPyTable(["Season"] + season_data.column_names[:17], team_data)
+    team_data.drop_column("Rk")
     return team_data
 
 def get_raw_player_data():
-    """TODO
+    """Load all of the raw player data into a MyPyTable object
+    Adds a column for season (i.e. 99 for 1998 - 1999 season)
+
+    Returns:
+        player_data(MyPyTable): table object containing the player data
     """
     seasons = get_season_strings()
-    data = []
+    player_data = []
     for season in seasons:
+        season_number = season[-2:]
         file_loc = "players_" + season + ".csv"
         file_loc = os.path.join("input_data", "player_stats", file_loc)
         # can't use ascii because of european player names, must use utf-8
         season_data = MyPyTable().load_from_file(file_loc, ascii=False)
-        data += season_data.data
-    player_data = MyPyTable(season_data.column_names, data)
+        data = season_data.data
+        data = [[season_number] + row for row in data]
+        player_data += data
+    player_data = MyPyTable(["Season"] + season_data.column_names, player_data)
+    player_data.drop_column("Rk")
     return player_data
 
 def clean_player_data(data):
-    """TODO
+    """Clean MyPyTable object containing the player data for later use
+
+    Args:
+        data(MyPyTable): table object containing the player data
+
+    Cleaning Steps:
+        1. decode the team abbreviation column so it can be joined with team data
+        2. fix the player name column by 
+            * getting rid of basketball reference code for players
+            * getting rid of asterisks denoting hall of famers
+            * getting rid of special accented characters in names
     """
     teams = {"ATL":	"Atlanta Hawks", "BRK":	"Brooklyn Nets", "BOS": "Boston Celtics",
              "CHO":	"Charlotte Hornets", "CHI":	"Chicago Bulls", "CLE": "Cleveland Cavaliers",
