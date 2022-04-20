@@ -12,6 +12,7 @@ Description:
 """
 
 import os
+from math import sqrt
 from unidecode import unidecode
 from mysklearn.mypytable import MyPyTable
 
@@ -174,6 +175,17 @@ def clean_player_data(data):
     data.drop_column("Rk")
     data.column_names[data.column_names.index("Tm")] = "Team"
 
+    pts_index = data.column_names.index("PTS")
+    min_index = data.column_names.index("MP")
+    for i in range(len(data.data)):
+        ppg = data.data[i][pts_index]
+        mpg = data.data[i][min_index]
+        data.data[i] = data.data[i] + [jortin_per_36(ppg, mpg)]
+    data.column_names += ["JPPG"]
+
+def jortin_per_36(stat_per_game, minutes_per_game):
+    return -1 * sqrt(9 * minutes_per_game) + stat_per_game + 18
+
 def main():
     """Used to test validity of functions and to 
     call functions that store data in .csv files
@@ -183,17 +195,17 @@ def main():
     clean_player_data(players)
     clean_team_data(teams)
 
-    # cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
-    # cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
+    cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
+    cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
     cleaned_joined_loc = os.path.join("input_data", "processed_data", "team_player_stats.csv")
 
     # teams.save_to_file(cleaned_team_loc)
     # players.save_to_file(cleaned_player_loc)
     player_season_stats = teams.perform_inner_join(players, ["Season", "Team"])
-    player_season_stats.save_to_file(cleaned_joined_loc)
+    # player_season_stats.save_to_file(cleaned_joined_loc)
 
     teams_stats = player_season_stats.groupby("Team", "Season")
-    # print(teams_stats["Chicago Bulls"][96])
+    print(teams_stats["Chicago Bulls"][96])
     
 
 if __name__ == "__main__":
