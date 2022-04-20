@@ -66,13 +66,12 @@ def get_raw_team_data():
         season_number = season[-2:]
         file_loc = "teams_" + season + ".csv"
         file_loc = os.path.join("input_data", "team_stats", file_loc)
-        season_data = MyPyTable().load_from_file(file_loc)
+        season_data = MyPyTable().load_from_file(file_loc, ascii=False)
         data = season_data.data
         # different month data columns for each season
         data = [[season_number] + row[:17] for row in data]
         team_data += data
     team_data = MyPyTable(["Season"] + season_data.column_names[:17], team_data)
-    team_data.drop_column("Rk")
     return team_data
 
 def get_raw_player_data():
@@ -94,8 +93,39 @@ def get_raw_player_data():
         data = [[season_number] + row for row in data]
         player_data += data
     player_data = MyPyTable(["Season"] + season_data.column_names, player_data)
-    player_data.drop_column("Rk")
     return player_data
+
+def clean_team_data(data):
+    """Clean MyPyTable object containing the player data for later use
+
+    Args:
+        data(MyPyTable): table object containing the team data
+
+    Cleaning Steps:
+        1. Dropping columns
+            Only keeping team name, season, and overall record
+            Win percentage (later discretized) is the class we are
+            trying to predict, and the rest of the labels are just
+            win descriptions (i.e record by month, etc.)
+        2. Extracting wins, losses, games played, and win percent from 'Overall' attribute
+    """
+    cols_to_keep = ["Team", "Season", "Overall"]
+    col_indices = [data.column_names.index(col) for col in cols_to_keep]
+    for i in range(len(data.data)):
+        data.data[i] = [data.data[i][j] for j in col_indices]
+    data.column_names = cols_to_keep
+
+    record_index = data.column_names.index("Overall")
+    for i in range(len(data.data)):
+        record_str = data.data[i][record_index]
+        record = record_str.split("-")
+        wins = int(record[0])
+        loses = int(record[1])
+        games_played = wins + loses
+        win_percent = wins / games_played
+        data.data[i] += [games_played, win_percent, wins, loses]
+    data.column_names += ["GP", "Win Percentage", "W", "L"]
+
 
 def clean_player_data(data):
     """Clean MyPyTable object containing the player data for later use
@@ -109,6 +139,8 @@ def clean_player_data(data):
             * getting rid of basketball reference code for players
             * getting rid of asterisks denoting hall of famers
             * getting rid of special accented characters in names
+        3. Dropping columns
+            * Rk: just a numbering of players for that season, irrelevant when combined
     """
     teams = {"ATL":	"Atlanta Hawks", "BRK":	"Brooklyn Nets", "BOS": "Boston Celtics",
              "CHO":	"Charlotte Hornets", "CHI":	"Chicago Bulls", "CLE": "Cleveland Cavaliers",
@@ -139,6 +171,7 @@ def clean_player_data(data):
         if player_name[-1] == "*":
             player_name = player_name[:-1]
         row[name_index] = player_name
+    data.drop_column("Rk")
 
 def main():
     """Used to test validity of functions and to 
@@ -147,6 +180,7 @@ def main():
     teams = get_raw_team_data()
     players = get_raw_player_data()
     clean_player_data(players)
+    clean_team_data(teams)
 
     cleaned_player_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
     cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
