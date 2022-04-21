@@ -12,6 +12,9 @@ Description:
 """
 
 import os
+import operator
+from sre_constants import SUCCESS
+import matplotlib.pyplot as plt
 from math import sqrt
 from unidecode import unidecode
 from mysklearn.mypytable import MyPyTable
@@ -124,8 +127,9 @@ def clean_team_data(data):
         loses = int(record[1])
         games_played = wins + loses
         win_percent = wins / games_played
-        data.data[i] += [games_played, win_percent, wins, loses]
-    data.column_names += ["GP", "Win Percentage", "W", "L"]
+        success_rate = discretize_win_percent(win_percent)
+        data.data[i] += [games_played, win_percent, wins, loses, success_rate]
+    data.column_names += ["GP", "Win Percentage", "W", "L", "Success"]
 
 
 def clean_player_data(data):
@@ -184,7 +188,76 @@ def clean_player_data(data):
     data.column_names += ["JPPG"]
 
 def jortin_per_36(stat_per_game, minutes_per_game):
+    """TODO:
+    """
     return -1 * sqrt(9 * minutes_per_game) + stat_per_game + 18
+
+def discretize_jppg(jppg):
+    if jppg < 85:
+        return 1
+    elif jppg < 90:
+        return 2
+    elif jppg < 95:
+        return 3
+    elif jppg < 100:
+        return 4
+    elif jppg < 105:
+        return 5
+    elif jppg < 110:
+        return 6
+    elif jppg < 115:
+        return 7
+    elif jppg < 120:
+        return 8
+    elif jppg < 125:
+        return 9
+    elif jppg < 130:
+        return 10
+    elif jppg < 135:
+        return 11
+    else:
+        return 12
+
+def discretize_win_percent(percent):
+    if percent < 0.3:
+        return 1
+    if percent < 0.45:
+        return 2
+    if percent < 0.55:
+        return 3
+    if percent < 0.65:
+        return 4
+    if percent < 0.70:
+        return 5
+    if percent < 0.8:
+        return 6
+    else:
+        return 7
+
+def create_team_data(data):
+    """TODO:
+    """
+    rows = []
+    column_names = ["Team", "Season", "JPPG", "Success"]
+    top_n = 10
+
+    for team_name, season_dict in data.items():
+        for season, table in season_dict.items():
+            team_games = table.data[0][table.column_names.index("GP")]
+            team_success = table.data[0][table.column_names.index("Success")]
+
+            jppg = table.get_column("JPPG")
+            games_played = table.get_column("G")
+            jppg = [round(jppg[i] * (games_played[i] / team_games), 2) for i in range(len(jppg))]
+
+            jppg.sort(reverse=True)
+            jppg = jppg[0:top_n]
+            jppg = sum(jppg)
+            jppg = discretize_jppg(jppg)
+            rows.append([team_name, season, jppg, team_success])
+
+    return MyPyTable(column_names, rows)
+
 
 def main():
     """Used to test validity of functions and to 
@@ -199,13 +272,19 @@ def main():
     cleaned_team_loc = os.path.join("input_data", "processed_data", "team_info.csv")
     cleaned_joined_loc = os.path.join("input_data", "processed_data", "team_player_stats.csv")
 
-    # teams.save_to_file(cleaned_team_loc)
-    # players.save_to_file(cleaned_player_loc)
+    teams.save_to_file(cleaned_team_loc)
+    players.save_to_file(cleaned_player_loc)
     player_season_stats = teams.perform_inner_join(players, ["Season", "Team"])
-    # player_season_stats.save_to_file(cleaned_joined_loc)
+    player_season_stats.save_to_file(cleaned_joined_loc)
 
     teams_stats = player_season_stats.groupby("Team", "Season")
-    print(teams_stats["Chicago Bulls"][96])
+    team_data = create_team_data(teams_stats)
+    data_loc = os.path.join("input_data", "processed_data", "team_stats.csv")
+    team_data.save_to_file(data_loc)
+
+    data = team_data.data
+    data.sort(key=operator.itemgetter(2))
+    print(data)
     
 
 if __name__ == "__main__":
