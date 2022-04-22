@@ -11,6 +11,7 @@ Description:
     project.
 """
 
+from audioop import reverse
 import os
 import operator
 from sre_constants import SUCCESS
@@ -218,43 +219,76 @@ def discretize_jppg(jppg):
     else:
         return 12
 
-def discretize_win_percent(percent):
-    if percent < 0.3:
+def discretize_win_percent(percent): # games won if 82 game season
+    if percent < 0.25: # <20 games won
         return 1
-    if percent < 0.45:
+    elif percent < 0.43: # <35 games won
         return 2
-    if percent < 0.55:
+    elif percent < 0.60: # <50 games won
         return 3
-    if percent < 0.65:
+    elif percent < 0.75: # <65 games won
         return 4
-    if percent < 0.70:
+    else:                # >= 65 games won
         return 5
-    if percent < 0.8:
-        return 6
+
+def discretize_trb(rebounds):
+    if rebounds < 35:
+        return 1
+    elif rebounds < 40:
+        return 2
+    elif rebounds < 45:
+        return 3
+    elif rebounds < 50:
+        return 4
     else:
-        return 7
+        return 5
+
+def discretize_ast(assists):
+    if assists < 20:
+        return 1
+    elif assists < 25:
+        return 2
+    elif assists < 30:
+        return 3
+    elif assists < 35:
+        return 4
+    else:
+        return 5
+
 
 def create_team_data(data):
     """TODO:
     """
     rows = []
-    column_names = ["Team", "Season", "JPPG", "Success"]
-    top_n = 10
+    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "Success"]
+    top_n = 7 # Number of players
 
     for team_name, season_dict in data.items():
         for season, table in season_dict.items():
             team_games = table.data[0][table.column_names.index("GP")]
             team_success = table.data[0][table.column_names.index("Success")]
 
-            jppg = table.get_column("JPPG")
+            jppg = table.get_column("JPPG") # Jortin PPG Creation
             games_played = table.get_column("G")
             jppg = [round(jppg[i] * (games_played[i] / team_games), 2) for i in range(len(jppg))]
-
             jppg.sort(reverse=True)
             jppg = jppg[0:top_n]
             jppg = sum(jppg)
-            jppg = discretize_jppg(jppg)
-            rows.append([team_name, season, jppg, team_success])
+            jppg = discretize_jppg(jppg) 
+
+            trb = table.get_column("TRB") # Total Rebounds
+            trb.sort(reverse=True)
+            trb = trb[0:top_n]
+            trb = sum(trb)
+            trb = discretize_trb(trb)
+
+            ast = table.get_column("AST") # Total Assists
+            ast.sort(reverse=True)
+            ast = ast[0:top_n]
+            ast = sum(ast)
+            ast = discretize_ast(ast)
+
+            rows.append([team_name, season, jppg, trb, ast, team_success]) # Adds stat row to table
 
     return MyPyTable(column_names, rows)
 
@@ -283,7 +317,7 @@ def main():
     team_data.save_to_file(data_loc)
 
     data = team_data.data
-    data.sort(key=operator.itemgetter(2))
+    data.sort(key=operator.itemgetter(5)) # Sorts by attribute
     print(data)
     
 
