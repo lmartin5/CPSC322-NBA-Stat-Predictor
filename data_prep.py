@@ -19,6 +19,8 @@ import matplotlib.pyplot as plt
 from math import sqrt
 from unidecode import unidecode
 from mysklearn.mypytable import MyPyTable
+from copy import deepcopy
+from tabulate import tabulate
 
 """Globals (Change as data is added or removed)
     first_season(int): earliest season we have data for
@@ -220,37 +222,76 @@ def discretize_jppg(jppg):
         return 12
 
 def discretize_win_percent(percent): # games won if 82 game season
+    """
     if percent < 0.25: # <20 games won
         return 1
-    elif percent < 0.43: # <35 games won
+    elif percent < 0.40: # <33 games won
         return 2
-    elif percent < 0.60: # <50 games won
+    elif percent < 0.55: # <46 games won
         return 3
-    elif percent < 0.75: # <65 games won
+    elif percent < 0.70: # <58 games won
         return 4
-    else:                # >= 65 games won
+    else: # >58 games won
         return 5
-
-def discretize_trb(rebounds):
-    if rebounds < 35:
+    """
+    if percent < .500:
         return 1
-    elif rebounds < 40:
+    #elif percent < .66:
+    #    return 2
+    else:
         return 2
-    elif rebounds < 45:
+    
+def discretize_trb(rebounds):
+    if rebounds < 25:
+        return 1
+    elif rebounds < 27.5:
+        return 2
+    elif rebounds < 30:
         return 3
-    elif rebounds < 50:
+    elif rebounds < 32.5:
+        return 4
+    elif rebounds < 35:
+        return 5
+    elif rebounds < 37.5:
+        return 6
+    elif rebounds < 40:
+        return 7
+    else:
+        return 8
+
+def discretize_ast(assists):
+    if assists < 15:
+        return 1
+    elif assists < 17.5:
+        return 2
+    elif assists < 20:
+        return 3
+    elif assists < 22.5:
         return 4
     else:
         return 5
 
-def discretize_ast(assists):
-    if assists < 20:
+
+def discretize_big_3_fg(fg):
+    if fg < .40:
         return 1
-    elif assists < 25:
+    elif fg < .43:
         return 2
-    elif assists < 30:
+    elif fg < .46:
         return 3
-    elif assists < 35:
+    elif fg < .50:
+        return 4
+    else:
+        return 5
+
+def discretize_big_3_fg_3(fg_3):
+    if fg_3 < .30:
+        return 1
+    elif fg_3 < .34:
+        return 2
+    elif fg_3 < .375:
+        return 3
+    elif fg_3 <= .40:
         return 4
     else:
         return 5
@@ -260,16 +301,17 @@ def create_team_data(data):
     """TODO:
     """
     rows = []
-    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "Success"]
+    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG", "Success"]
     top_n = 7 # Number of players
 
     for team_name, season_dict in data.items():
         for season, table in season_dict.items():
             team_games = table.data[0][table.column_names.index("GP")]
-            team_success = table.data[0][table.column_names.index("Success")]
+            team_success = table.data[0][table.column_names.index("Success")] 
+            table_copy = table
+            games_played = table.get_column("G")
 
             jppg = table.get_column("JPPG") # Jortin PPG Creation
-            games_played = table.get_column("G")
             jppg = [round(jppg[i] * (games_played[i] / team_games), 2) for i in range(len(jppg))]
             jppg.sort(reverse=True)
             jppg = jppg[0:top_n]
@@ -277,18 +319,55 @@ def create_team_data(data):
             jppg = discretize_jppg(jppg) 
 
             trb = table.get_column("TRB") # Total Rebounds
+            trb = [round(trb[i] * (games_played[i] / team_games), 2) for i in range(len(trb))]
             trb.sort(reverse=True)
             trb = trb[0:top_n]
             trb = sum(trb)
             trb = discretize_trb(trb)
 
             ast = table.get_column("AST") # Total Assists
+            ast = [round(ast[i] * (games_played[i] / team_games), 2) for i in range(len(ast))]
             ast.sort(reverse=True)
             ast = ast[0:top_n]
             ast = sum(ast)
             ast = discretize_ast(ast)
 
-            rows.append([team_name, season, jppg, trb, ast, team_success]) # Adds stat row to table
+            table_copy.data.sort(key=operator.itemgetter(table_copy.column_names.index("FGA")), reverse=True) #Sorts by most prolific scorers
+            games_played_copy = table_copy.get_column("G")
+            fga = table_copy.get_column("FGA")
+            fgm = table_copy.get_column("FG")
+            fga_3 = table_copy.get_column("3PA")
+            fgm_3 = table_copy.get_column("3P")
+            for i in range(top_n):
+                if games_played_copy[i] / team_games < .5: # Removes player with less than half season played
+                    fga.pop(i)
+                    fgm.pop(i)
+                    fga_3.pop(i)
+                    fgm_3.pop(i)
+
+            fga = fga[0:3] #top 3 scorers (big 3 fg%)
+            fgm = fgm[0:3]
+            fga_3 = fga_3[0:3]
+            fgm_3 = fgm_3[0:3]
+
+            fga = sum(fga)
+            fgm = sum(fgm)
+            fg = fgm / fga
+            fg = discretize_big_3_fg(fg)
+
+            fga_3 = sum(fga_3)
+            fgm_3 = sum(fgm_3)
+            fg_3 = fgm_3 / fga_3
+            fg_3 = discretize_big_3_fg_3(fg_3)
+
+            stl = table.get_column("STL") # Total Rebounds
+            stl = [round(stl[i] * (games_played[i] / team_games), 2) for i in range(len(stl))]
+            stl.sort(reverse=True)
+            stl = stl[0:3] # top 3 ball
+            stl = sum(stl)
+            #stl = discretize_trb(stl)
+    
+            rows.append([team_name, season, jppg, trb, ast, fg, fg_3, team_success]) # Adds stat row to table
 
     return MyPyTable(column_names, rows)
 
@@ -317,8 +396,8 @@ def main():
     team_data.save_to_file(data_loc)
 
     data = team_data.data
-    data.sort(key=operator.itemgetter(5)) # Sorts by attribute
-    print(data)
+    data.sort(key=operator.itemgetter(7)) # Sorts by attribute
+    print(tabulate(data))
     
 
 if __name__ == "__main__":
