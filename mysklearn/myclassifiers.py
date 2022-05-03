@@ -80,9 +80,15 @@ class MyDecisionTreeClassifier:
         train_data = [X_train[i] + [y_train[i]] for i in range(len(X_train))]
         train = MyPyTable(header, train_data)
 
-        self.attribute_domains = {}
-        for attribute in header:
-            self.attribute_domains[attribute] = train.get_atttribute_domain(attribute)
+        if self.attribute_domains is None:
+            self.attribute_domains = {}
+            for attribute in header:
+                self.attribute_domains[attribute] = train.get_atttribute_domain(attribute)
+
+        freqs = myutils.get_frequencies(y_train)
+        freqs = [[val, freq] for val, freq in freqs.items()]
+        freqs.sort(key=operator.itemgetter(1)) # sort by freq
+        self.most_common_label = freqs[-1][0] # stores most common label
 
         self.most_recent_attribute_size = len(self.X_train)
         self.tree = self.tdidt(train, avail_attributes)
@@ -262,7 +268,10 @@ class MyDecisionTreeClassifier:
         """
         y_predicted = []
         for instance in X_test:
-            y_predicted.append(self.tdidt_predict(self.tree, instance))
+            prediction = self.tdidt_predict(self.tree, instance)
+            if prediction is None:
+                prediction = self.most_common_label
+            y_predicted.append(prediction)
         return y_predicted
 
     def tdidt_predict(self, tree, instance):
@@ -346,25 +355,6 @@ class MyDecisionTreeClassifier:
             curr_rule += str(value) + " AND "
             # RECURSE
             self.tdidt_get_rules(curr_rule, tree[2], attribute_names, class_name)
-
-    # BONUS method - DID NOT IMPLEMENT
-    def visualize_tree(self, dot_fname, pdf_fname, attribute_names=None):
-        """BONUS: Visualizes a tree via the open source Graphviz graph visualization package and
-        its DOT graph language (produces .dot and .pdf files).
-
-        Args:
-            dot_fname(str): The name of the .dot output file.
-            pdf_fname(str): The name of the .pdf output file generated from the .dot file.
-            attribute_names(list of str or None): A list of attribute names to use in the decision rules
-                (None if a list is not provided and the default attribute names based on indexes
-                (e.g. "att0", "att1", ...) should be used).
-
-        Notes:
-            Graphviz: https://graphviz.org/
-            DOT language: https://graphviz.org/doc/info/lang.html
-            You will need to install graphviz in the Docker container as shown in class to complete this method.
-        """
-        pass
 
 class MySimpleLinearRegressionClassifier:
     """Represents a simple linear regression classifier that discretizes
@@ -586,6 +576,7 @@ class MyNaiveBayesClassifier:
         """
         self.priors = priors
         self.posteriors = posteriors
+        self.attribute_domains = None
 
     def fit(self, X_train, y_train):
         """Fits a Naive Bayes classifier to X_train and y_train.
@@ -596,23 +587,32 @@ class MyNaiveBayesClassifier:
             y_train(list of obj): The target y values (parallel to X_train)
                 The shape of y_train is n_train_samples
         """
+        if self.attribute_domains is None:
+            header = [i for i in range(len(X_train[0]))] + ["class"]
+            # storing data in MyPyTable object for access to functions there
+            train_data = [X_train[i] + [y_train[i]] for i in range(len(X_train))]
+            train = MyPyTable(header, train_data)
+            self.attribute_domains = {}
+            for attribute in header:
+                self.attribute_domains[attribute] = train.get_atttribute_domain(attribute)
+
         num_attributes = len(X_train[0])
         train_header = list(range(num_attributes)) + ["class"]
         train_data = [X_train[i] + [y_train[i]] for i in range(len(X_train))]
         train = MyPyTable(train_header, train_data)
 
-        class_domain = train.get_atttribute_domain("class")
+        class_domain = self.attribute_domains["class"]
         self.priors = {label: 0.0 for label in class_domain}
         self.posteriors = {label: [] for label in class_domain}
 
         num_instances = len(train.data)
-        class_splits = train.groupby("class")
+        class_splits = self.partition_instances(train, "class")
         for label in class_domain:
             self.priors[label] = len(class_splits[label].data) / num_instances
 
         # iterating through each attribute
         for index in range(num_attributes):
-            attribute_domain = train.get_atttribute_domain(index)
+            attribute_domain = self.attribute_domains[index]
             for label in class_domain:
                 self.posteriors[label].append({attrib: 0.0 for attrib in attribute_domain})
                 subset = class_splits[label]
@@ -621,6 +621,33 @@ class MyNaiveBayesClassifier:
                 for attrib_value in list(attribute_cts.keys()):
                     prob = attribute_cts[attrib_value] / len(subset.data)
                     self.posteriors[label][index][attrib_value] = prob
+
+    def partition_instances(self, table, split_attribute):
+        """Partitions the table of data based on split_attribute
+        Different than groupby since empty partitions are returned too.
+        Based on domain made in fit()
+
+        Args:
+            table(MyPyTable): the data that is currently available to tree
+                will be original data or partition of original data
+            split_attribute(str): the attribute to partition on
+
+        Returns:
+            partitions(dict of val, MyPyTable pairs): the partitions for each value in domain
+        """
+        att_index = table.column_names.index(split_attribute)
+        att_domain = self.attribute_domains[split_attribute]
+        parts = {domain_val: [].copy() for domain_val in att_domain}
+
+        for row in table.data:
+            parts[row[att_index]].append(row)
+
+        partitions = {}
+        for val, part in parts.items():
+            # deep copying data not needed since we aren't doing any manipulation
+            partitions[val] = MyPyTable(table.column_names.copy(), part.copy())
+
+        return partitions
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.

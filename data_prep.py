@@ -222,7 +222,6 @@ def discretize_jppg(jppg):
         return 12
 
 def discretize_win_percent(percent): # games won if 82 game season
-    """
     if percent < 0.25: # <20 games won
         return 1
     elif percent < 0.40: # <33 games won
@@ -240,6 +239,7 @@ def discretize_win_percent(percent): # games won if 82 game season
     #    return 2
     else:
         return 2
+    """
     
 def discretize_trb(rebounds):
     if rebounds < 25:
