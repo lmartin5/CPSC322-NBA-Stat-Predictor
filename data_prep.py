@@ -208,18 +208,8 @@ def discretize_jppg(jppg):
         return 5
     elif jppg < 110:
         return 6
-    elif jppg < 115:
-        return 7
-    elif jppg < 120:
-        return 8
-    elif jppg < 125:
-        return 9
-    elif jppg < 130:
-        return 10
-    elif jppg < 135:
-        return 11
     else:
-        return 12
+        return 7
 
 def discretize_win_percent(percent): # games won if 82 game season
     if percent < 0.25: # <20 games won
@@ -296,12 +286,35 @@ def discretize_big_3_fg_3(fg_3):
     else:
         return 5
 
+def discretize_stl(stl):
+    if stl < 4:
+        return 1
+    elif stl < 5:
+        return 2
+    elif stl < 6:
+        return 3
+    elif stl <= 7:
+        return 4
+    else:
+        return 5
+
+def discretize_blk(blk):
+    if blk < 2:
+        return 1
+    elif blk < 3:
+        return 2
+    elif blk < 4:
+        return 3
+    elif blk <= 5:
+        return 4
+    else:
+        return 5
 
 def create_team_data(data):
     """TODO:
     """
     rows = []
-    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG", "Success"]
+    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG", "STL", "BLK", "Success"]
     top_n = 7 # Number of players
 
     for team_name, season_dict in data.items():
@@ -360,14 +373,21 @@ def create_team_data(data):
             fg_3 = fgm_3 / fga_3
             fg_3 = discretize_big_3_fg_3(fg_3)
 
-            stl = table.get_column("STL") # Total Rebounds
+            stl = table.get_column("STL") # Total Steals
             stl = [round(stl[i] * (games_played[i] / team_games), 2) for i in range(len(stl))]
             stl.sort(reverse=True)
-            stl = stl[0:3] # top 3 ball
+            stl = stl[0:top_n]
             stl = sum(stl)
-            #stl = discretize_trb(stl)
+            stl = discretize_stl(stl)
+
+            blk = table.get_column("BLK") # Total Blocks
+            blk = [round(blk[i] * (games_played[i] / team_games), 2) for i in range(len(blk))]
+            blk.sort(reverse=True)
+            blk = blk[0:3]
+            blk = sum(blk)
+            blk = discretize_blk(blk)
     
-            rows.append([team_name, season, jppg, trb, ast, fg, fg_3, team_success]) # Adds stat row to table
+            rows.append([team_name, season, jppg, trb, ast, fg, fg_3, stl, blk, team_success]) # Adds stat row to table
 
     return MyPyTable(column_names, rows)
 
@@ -396,7 +416,7 @@ def main():
     team_data.save_to_file(data_loc)
 
     data = team_data.data
-    data.sort(key=operator.itemgetter(7)) # Sorts by attribute
+    data.sort(key=operator.itemgetter(2)) # Sorts by attribute
     print(tabulate(data))
     
 
