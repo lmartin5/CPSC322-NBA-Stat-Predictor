@@ -296,12 +296,39 @@ def discretize_big_3_fg_3(fg_3):
     else:
         return 5
 
+def discretize_stl(stl):
+    if stl < 4:
+        return 1
+    elif stl < 5:
+        return 2
+    elif stl < 6:
+        return 3
+    elif stl <= 7:
+        return 4
+    else:
+        return 5
+
+def discretize_blk(blk):
+    if blk < 2:
+        return 1
+    elif blk < 3:
+        return 2
+    elif blk < 4:
+        return 3
+    elif blk <= 5:
+        return 4
+    else:
+        return 5
 
 def create_team_data(table):
     """TODO:
     """
-    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG"]
-    top_n = 5 # Number of players
+    column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG", "STL", "BLK"]
+    top_n = 7 # Number of players
+
+    while len(table.data) < 7:
+        table.data.append([91,"Alaa Abdelnaby","PF",22.0,"Portland Trail Blazers",43.0,0.0,6.7,1.3,2.7,0.474,0.0,0.0,0,1.3,2.7,0.474,0.474,0.6,1.0,0.568,0.6,1.4,2.1,0.3,0.1,0.3,0.5,0.9,3.1,13.33469253667313])
+
 
     team_name = table.data[0][table.column_names.index("Team")]
     season = table.data[0][table.column_names.index("Season")]
@@ -365,7 +392,14 @@ def create_team_data(table):
     stl.sort(reverse=True)
     stl = stl[0:3] # top 3 ball
     stl = sum(stl)
-    #stl = discretize_trb(stl)
+    stl = discretize_stl(stl)
 
-    rows = [[team_name, season, jppg, trb, ast, fg, fg_3]] # Adds stat row to table
+    blk = table.get_column("BLK") # Total Blocks
+    blk = [round(blk[i] * (games_played[i] / team_games), 2) for i in range(len(blk))]
+    blk.sort(reverse=True)
+    blk = blk[0:3]
+    blk = sum(blk)
+    blk = discretize_blk(blk)
+
+    rows = [[team_name, season, jppg, trb, ast, fg, fg_3, stl, blk]] # Adds stat row to table
     return MyPyTable(column_names, rows)
