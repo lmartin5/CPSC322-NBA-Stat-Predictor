@@ -6,6 +6,7 @@ import pickle # a standard library
 
 from mysklearn.myclassifiers import MyKNeighborsClassifier
 from mysklearn.mypytable import MyPyTable
+from mysklearn.myutils import groupby
 
 
 file_loc = os.path.join("input_data", "processed_data", "team_stats.csv")
@@ -22,4 +23,12 @@ knn.fit(X, y)
 
 outfile = open("knn.p", "wb")
 pickle.dump(knn, outfile)
+outfile.close()
+
+file_loc = os.path.join("input_data", "processed_data", "player_stats.csv")
+player_stats = MyPyTable().load_from_file(file_loc)
+players = player_stats.groupby("Player", "Season")
+
+outfile = open("player_stats.p", "wb")
+pickle.dump(players, outfile)
 outfile.close()
