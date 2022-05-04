@@ -191,11 +191,14 @@ def clean_player_data(data):
     data.column_names += ["JPPG"]
 
 def jortin_per_36(stat_per_game, minutes_per_game):
-    """TODO:
+    """This function calculates the weighted points per game based on
+    the minutes played per game.
     """
     return -1 * sqrt(9 * minutes_per_game) + stat_per_game + 18
 
 def discretize_jppg(jppg):
+    """This function takes in raw jppg and returns the discretized value
+    """
     if jppg < 85:
         return 1
     elif jppg < 90:
@@ -222,6 +225,8 @@ def discretize_jppg(jppg):
         return 12
 
 def discretize_win_percent(percent): # games won if 82 game season
+    """This function takes in raw win percentage and returns the discretized value
+    """
     if percent < 0.25: # <20 games won
         return 1
     elif percent < 0.40: # <33 games won
@@ -232,16 +237,10 @@ def discretize_win_percent(percent): # games won if 82 game season
         return 4
     else: # >58 games won
         return 5
-    """
-    if percent < .500:
-        return 1
-    #elif percent < .66:
-    #    return 2
-    else:
-        return 2
-    """
     
 def discretize_trb(rebounds):
+    """This function takes in raw rebounds per game and returns the discretized value
+    """
     if rebounds < 25:
         return 1
     elif rebounds < 27.5:
@@ -260,6 +259,8 @@ def discretize_trb(rebounds):
         return 8
 
 def discretize_ast(assists):
+    """This function takes in raw assists per game and returns the discretized value
+    """
     if assists < 15:
         return 1
     elif assists < 17.5:
@@ -273,6 +274,9 @@ def discretize_ast(assists):
 
 
 def discretize_big_3_fg(fg):
+    """This function takes in raw fg percentage for the top three
+    most prolific scorers and returns the discretized value
+    """
     if fg < .40:
         return 1
     elif fg < .43:
@@ -285,6 +289,9 @@ def discretize_big_3_fg(fg):
         return 5
 
 def discretize_big_3_fg_3(fg_3):
+    """This function takes in raw 3pt fg percentage for the top three
+    most prolific scorers and returns the discretized value
+    """
     if fg_3 < .30:
         return 1
     elif fg_3 < .34:
@@ -297,6 +304,8 @@ def discretize_big_3_fg_3(fg_3):
         return 5
 
 def discretize_stl(stl):
+    """This function takes in raw steals per game and returns the discretized value
+    """
     if stl < 4:
         return 1
     elif stl < 5:
@@ -309,6 +318,8 @@ def discretize_stl(stl):
         return 5
 
 def discretize_blk(blk):
+    """This function takes in raw blocks per game and returns the discretized value
+    """
     if blk < 2:
         return 1
     elif blk < 3:
@@ -321,14 +332,14 @@ def discretize_blk(blk):
         return 5
 
 def create_team_data(table):
-    """TODO:
+    """This function takes in a list of player stats and calculates the team's discretized
+    team values.
     """
     column_names = ["Team", "Season", "JPPG", "TRB", "AST", "FG", "3FG", "STL", "BLK"]
     top_n = 7 # Number of players
 
     while len(table.data) < 7:
         table.data.append([91,"Alaa Abdelnaby","PF",22.0,"Portland Trail Blazers",43.0,0.0,6.7,1.3,2.7,0.474,0.0,0.0,0,1.3,2.7,0.474,0.474,0.6,1.0,0.568,0.6,1.4,2.1,0.3,0.1,0.3,0.5,0.9,3.1,13.33469253667313])
-
 
     team_name = table.data[0][table.column_names.index("Team")]
     season = table.data[0][table.column_names.index("Season")]
@@ -365,13 +376,6 @@ def create_team_data(table):
     fgm = table_copy.get_column("FG")
     fga_3 = table_copy.get_column("3PA")
     fgm_3 = table_copy.get_column("3P")
-    #for i in range(top_n):
-    #    if games_played_copy[i] / team_games < .5: # Removes player with less than half season played
-    #        fga.pop(i)
-    #        fgm.pop(i)
-    #        fga_3.pop(i)
-    #        fgm_3.pop(i)
-
     fga = fga[0:3] #top 3 scorers (big 3 fg%)
     fgm = fgm[0:3]
     fga_3 = fga_3[0:3]
