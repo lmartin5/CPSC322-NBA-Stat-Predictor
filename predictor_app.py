@@ -94,7 +94,6 @@ def make_prediction(instance):
                     break
     custom_team = MyPyTable(player_season_data.column_names, team_data)
     team_table = player_prep.create_team_data(custom_team)
-    
 
     team_table.drop_column("Team")
     team_table.drop_column("Season")
