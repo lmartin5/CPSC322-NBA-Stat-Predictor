@@ -387,9 +387,9 @@
                             <button type="button" class="btn btn-warning  mb-4 p-2 btnTWO">Play-In Hunter</button>
                             {% elif prediction|string() == "1.0"|string() %}
                             <button type="button" class="btn btn-warning  mb-4 p-2 btnONE">Lottery Team</button>
-                            {% elif prediction|string() == "-1.0"|string() %}
+                            {% elif prediction|string() == "-1"|string() %}
                             <button type="button" class="btn btn-warning  mb-4 p-2 btnBAD">Player Not Found</button>
-                            {% elif prediction|string() == "-2.0"|string() %}
+                            {% elif prediction|string() == "-2"|string() %}
                             <button type="button" class="btn  mb-4 p-2 btnBAD">Season Not Found For Player</button>
                             {% else %}
                             <button type="button" class="btn  mb-4 p-2 btnBLANK">HERE</button>
