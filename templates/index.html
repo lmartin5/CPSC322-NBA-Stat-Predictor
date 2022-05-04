@@ -51,10 +51,82 @@
         .btn1{
             width: 100%;
         }
-        .btn2{
+        .btnFIVE{
             width: 57%;
+            color: black;
+            background-color: white;
+            border-color: white;
+        }
+        .btnFIVE:hover {
+            color: black;
+            background-color: white;
+            border-color: white;
+        }
+        .btnTWO{
+            width: 57%;
+            color: black;
+            background-color: orange;
+            border-color: orange;
+        }
+        .btnTWO:hover {
+            color: black;
+            background-color: orange;
+            border-color: orange;
+        }
+        .btnBAD{
+            width: 57%;
+            color: black;
             background-color: red;
             border-color: red;
+        }
+        .btnBAD:hover {
+            color: black;
+            background-color: red;
+            border-color: red;
+        }
+        .btnONE{
+            width: 57%;
+            color: white;
+            background-color: black;
+            border-color: black;
+        }
+        .btnONE:hover {
+            color: white;
+            background-color: black;
+            border-color: black;
+        }
+        .btnTHREE{
+            width: 57%;
+            color: black;
+            background-color: yellow;
+            border-color: yellow;
+        }
+        .btnTHREE:hover {
+            color: black;
+            background-color: yellow;
+            border-color: yellow;
+        }
+        .btnBLANK{
+            width: 57%;
+            color: white;
+            background-color: white;
+            border-color: white;
+        }
+        .btnBLANK:hover {
+            color: white;
+            background-color: white;
+            border-color: white;
+        }
+        .btnFOUR{
+            width: 57%;
+            color: black;
+            background-color: green;
+            border-color: green;
+        }
+        .btnFOUR:hover {
+            color: black;
+            background-color: green;
+            border-color: green;
         }
         .center1{
             padding-top: 100px;
@@ -304,13 +376,22 @@
                                     <button type="submit" width="" class="btn btn-outline-primary mt-3 mb-3 p-2 btn1">Predict Team Success!</button>
                                 </div>
                             </div>
-                            {% if prediction|string() == "GOATED"|string() %}
-                            <button type="button" class="btn btn-success mb-4 p-2 btn2">{{ prediction }}</button>
-
-                            {% elif prediction|string() == "False"|string() %}
-                            <button type="button" class="btn btn-warning  mb-4 p-2 btn2">{{ prediction }}</button>
+                            {% if prediction|string() == "5.0"|string() %}
+                            <button type="button" class="btn btn-success mb-4 p-2 btnFIVE">It's A Lock</button>
+                            {% elif prediction|string() == "4.0"|string() %}
+                            <button type="button" class="btn btn-warning  mb-4 p-2 btnFOUR">Title Contender</button>
+                            {% elif prediction|string() == "3.0"|string() %}
+                            <button type="button" class="btn btn-warning  mb-4 p-2 btnTHREE">Playoff Bound</button>
+                            {% elif prediction|string() == "2.0"|string() %}
+                            <button type="button" class="btn btn-warning  mb-4 p-2 btnTWO">Play-In Hunter</button>
+                            {% elif prediction|string() == "1.0"|string() %}
+                            <button type="button" class="btn btn-warning  mb-4 p-2 btnONE">Lottery Team</button>
+                            {% elif prediction|string() == "-1.0"|string() %}
+                            <button type="button" class="btn btn-warning  mb-4 p-2 btnBAD">Player Not Found</button>
+                            {% elif prediction|string() == "-2.0"|string() %}
+                            <button type="button" class="btn  mb-4 p-2 btnBAD">Season Not Found For Player</button>
                             {% else %}
-                            <button type="button" class="btn  mb-4 p-2 btn2">{{ prediction }}</button>
+                            <button type="button" class="btn  mb-4 p-2 btnBLANK">HERE</button>
                             {% endif %}
                         </form>
                  </div>
